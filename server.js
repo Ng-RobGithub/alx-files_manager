@@ -1,15 +1,17 @@
+// server.js
 import express from 'express';
-import dotenv from 'dotenv';
-import routes from './routes';
+import bodyParser from 'body-parser';
+import { config } from 'dotenv';
+import router from './routes/index';
 
-dotenv.config();
+config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const port = process.env.PORT || 5000;
 
-app.use(express.json());
-app.use(routes);
+app.use(bodyParser.json());
+app.use('/', router);
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
