@@ -1,0 +1,14 @@
+$headers = @{
+    "X-Token" = "YOUR_TOKEN"
+    "Content-Type" = "application/json"
+}
+
+$body = @{
+    "name" = "myText.txt"
+    "type" = "file"
+    "data" = "SGVsbG8gV2Vic3RhY2shCg=="
+}
+
+$bodyJson = ConvertTo-Json $body
+
+Invoke-WebRequest -Uri "http://localhost:5000/files" -Method POST -Headers $headers -Body $bodyJson
