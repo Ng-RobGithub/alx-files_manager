@@ -1,7 +1,7 @@
 // controllers/FilesController.js
 import { ObjectId } from 'mongodb';
-import dbClient from '../utils/db';
-import redisClient from '../utils/redis';
+import dbClient from '../utils/db.js';
+import redisClient from '../utils/redis.js';
 import { promises as fs } from 'fs';
 import mime from 'mime-types';
 

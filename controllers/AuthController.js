@@ -1,8 +1,8 @@
 // controllers/AuthController.js
 import { v4 as uuidv4 } from 'uuid';
 import sha1 from 'sha1';
-import redisClient from '../utils/redis';
-import dbClient from '../utils/db';
+import redisClient from '../utils/redis.js';
+import dbClient from '../utils/db.js';
 
 class AuthController {
   static async getConnect(req, res) {

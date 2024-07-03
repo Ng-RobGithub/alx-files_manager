@@ -1,4 +1,8 @@
-import { MongoClient } from 'mongodb';
+import pkg from 'mongodb';
+const { MongoClient } = pkg;
+import { config } from 'dotenv';
+
+config();
 
 const { DB_HOST, DB_PORT, DB_DATABASE } = process.env;
 

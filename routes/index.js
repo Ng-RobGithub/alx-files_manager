@@ -1,8 +1,9 @@
 // routes/index.js
 import express from 'express';
-import UsersController from '../controllers/UsersController';
-import AuthController from '../controllers/AuthController';
-import FilesController from '../controllers/FilesController';
+import db from '../utils/db.js';
+import UsersController from '../controllers/UsersController.js';
+import AuthController from '../controllers/AuthController.js';
+import FilesController from '../controllers/FilesController.js';
 
 const router = express.Router();
 

@@ -2,7 +2,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import { config } from 'dotenv';
-import router from './routes/index';
+import router from './routes/index.js';
 
 config();
 
