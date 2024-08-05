@@ -2,7 +2,7 @@
 import Queue from 'bull';
 import { promises as fs } from 'fs';
 import { ObjectId } from 'mongodb';
-import dbClient from './utils/db';
+import dbClient from './utils/db.js';
 import thumbnail from 'image-thumbnail';
 
 export const fileQueue = new Queue('fileQueue');
