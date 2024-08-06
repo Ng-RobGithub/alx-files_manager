@@ -1,6 +1,6 @@
 import supertest from 'supertest';
 import chai from 'chai';
-import api from '../server';
+import api from '../server.js';
 
 // Setup global variables for tests
 global.app = api;

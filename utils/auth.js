@@ -3,8 +3,8 @@
 import sha1 from 'sha1';
 import { Request } from 'express';
 import { ObjectId } from 'mongodb'; // Importing ObjectId directly from 'mongodb'
-import dbClient from './db';
-import redisClient from './redis';
+import dbClient from './db.js';
+import redisClient from './redis.js';
 
 /**
  * Fetches the user from the Authorization header in the given request object.

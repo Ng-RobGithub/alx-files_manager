@@ -1,5 +1,6 @@
-import { MongoClient } from 'mongodb';
-import envLoader from './env_loader';
+import pkg from 'mongodb';
+const { MongoClient } = pkg;
+import envLoader from './env_loader.js';
 
 /**
  * Represents a MongoDB client.
