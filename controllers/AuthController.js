@@ -1,55 +1,52 @@
-// controllers/AuthController.js
+/* eslint-disable import/no-named-as-default */
 import { v4 as uuidv4 } from 'uuid';
-import sha1 from 'sha1';
-import redisClient from '../utils/redis.js';
-import dbClient from '../utils/db.js';
+import redisClient from '../utils/redis';
 
-class AuthController {
+/**
+ * Controller for handling authentication-related actions.
+ */
+export default class AuthController {
+  /**
+   * Handles user connection and generates a new authentication token.
+   * @param {Request} req The Express request object.
+   * @param {Response} res The Express response object.
+   */
   static async getConnect(req, res) {
-    const authHeader = req.headers.authorization || '';
-    const [type, credentials] = authHeader.split(' ');
+    try {
+      const { user } = req;
+      const token = uuidv4();
 
-    if (type !== 'Basic' || !credentials) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      await redisClient.set(`auth_${token}`, user._id.toString(), 'EX', 24 * 60 * 60);
+      res.status(200).json({ token });
+    } catch (error) {
+      console.error('Error generating token:', error);
+      res.status(500).json({ error: 'Failed to generate token' });
     }
-
-    const decodedCredentials = Buffer.from(credentials, 'base64').toString('ascii');
-    const [email, password] = decodedCredentials.split(':');
-
-    if (!email || !password) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const user = await dbClient.db.collection('users').findOne({ email, password: sha1(password) });
-
-    if (!user) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const token = uuidv4();
-    const key = `auth_${token}`;
-
-    await redisClient.set(key, user._id.toString(), 24 * 3600);
-    return res.status(200).json({ token });
   }
 
+  /**
+   * Handles user disconnection and invalidates the authentication token.
+   * @param {Request} req The Express request object.
+   * @param {Response} res The Express response object.
+   */
   static async getDisconnect(req, res) {
-    const token = req.headers['x-token'];
+    try {
+      const token = req.headers['x-token'];
 
-    if (!token) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      if (!token) {
+        return res.status(400).json({ error: 'Token is required' });
+      }
+
+      const result = await redisClient.del(`auth_${token}`);
+
+      if (result === 0) {
+        return res.status(404).json({ error: 'Token not found' });
+      }
+
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error invalidating token:', error);
+      res.status(500).json({ error: 'Failed to invalidate token' });
     }
-
-    const key = `auth_${token}`;
-    const userId = await redisClient.get(key);
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    await redisClient.del(key);
-    return res.status(204).send();
   }
 }
-
-export default AuthController;

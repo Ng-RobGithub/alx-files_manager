@@ -1,30 +1,37 @@
+/* eslint-disable import/no-named-as-default */
+import redisClient from '../utils/redis.js';
 import dbClient from '../utils/db.js';
-import RedisClient from '../utils/redis.js';
 
-const AppController = {
-  async getStatus(req, res) {
+export default class AppController {
+  /**
+   * Gets the status of Redis and Database connections.
+   * @param {Request} req The Express request object.
+   * @param {Response} res The Express response object.
+   */
+  static getStatus(req, res) {
     try {
-      const redisAlive = await RedisClient.isAlive();
-      const dbAlive = await dbClient.isAlive();
-
-      res.status(200).json({ redis: redisAlive, db: dbAlive });
+      res.status(200).json({
+        redis: redisClient.isAlive(),
+        db: dbClient.isAlive(),
+      });
     } catch (error) {
-      console.error('Error retrieving status:', error);
-      res.status(500).json({ error: 'Unable to retrieve status' });
+      console.error('Error getting status:', error);
+      res.status(500).json({ error: 'Failed to get status' });
     }
-  },
+  }
 
-  async getStats(req, res) {
+  /**
+   * Gets statistics about users and files.
+   * @param {Request} req The Express request object.
+   * @param {Response} res The Express response object.
+   */
+  static async getStats(req, res) {
     try {
-      const numUsers = await dbClient.nbUsers();
-      const numFiles = await dbClient.nbFiles();
-
-      res.status(200).json({ users: numUsers, files: numFiles });
+      const [usersCount, filesCount] = await Promise.all([dbClient.nbUsers(), dbClient.nbFiles()]);
+      res.status(200).json({ users: usersCount, files: filesCount });
     } catch (error) {
-      console.error('Error retrieving stats:', error);
-      res.status(500).json({ error: 'Unable to retrieve stats' });
+      console.error('Error getting stats:', error);
+      res.status(500).json({ error: 'Failed to get statistics' });
     }
-  },
-};
-
-export default AppController;
+  }
+}

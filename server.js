@@ -1,33 +1,33 @@
 import express from 'express';
-import bodyParser from 'body-parser';
-import { config } from 'dotenv';
-import router from './routes/index.js';
-import helmet from 'helmet'; // For security headers
-import cors from 'cors'; // For handling CORS
+import startServer from './libs/boot';
+import injectRoutes from './routes';
+import injectMiddlewares from './libs/middlewares';
 
-config();
+const server = express();
 
-const app = express();
-const port = process.env.PORT || 5000;
+// Inject middlewares
+injectMiddlewares(server);
 
-// Security headers
-app.use(helmet());
+// Inject routes
+injectRoutes(server);
 
-// CORS
-app.use(cors());
-
-// Body parser
-app.use(bodyParser.json());
-
-// Routes
-app.use('/', router);
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
+// Add health check route
+server.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK' });
 });
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Server running on port ${port}`);
-});
+// Start server and handle graceful shutdown
+const start = async () => {
+  await startServer(server);
+
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM signal received: closing HTTP server');
+    server.close(() => {
+      console.log('HTTP server closed');
+    });
+  });
+};
+
+start();
+
+export default server;
