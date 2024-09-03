@@ -2,15 +2,18 @@
 /* eslint-disable no-unused-vars */
 import { tmpdir } from 'os';
 import { promisify } from 'util';
-import Queue from 'bull/lib/queue';
+import Queue from 'bull';
 import { v4 as uuidv4 } from 'uuid';
 import { mkdir, writeFile, stat, existsSync, realpath } from 'fs';
 import { join as joinPath } from 'path';
-import { Request, Response } from 'express';
+import express from 'express'; // Import the entire express package
 import { contentType } from 'mime-types';
-import mongoDBCore from 'mongodb/lib/core';
+import pkg from 'mongodb';
 import dbClient from '../utils/db.js';
 import { getUserFromXToken } from '../utils/auth.js';
+
+const { Request, Response } = express; // Destructure Request and Response from express
+const { ObjectId } = pkg; // Extract ObjectId from mongodb package
 
 const VALID_FILE_TYPES = {
   folder: 'folder',
@@ -54,7 +57,7 @@ export default class FilesController {
 
       if (parentId !== ROOT_FOLDER_ID) {
         const file = await dbClient.filesCollection().findOne({
-          _id: new mongoDBCore.BSON.ObjectId(isValidId(parentId) ? parentId : NULL_ID),
+          _id: new ObjectId(isValidId(parentId) ? parentId : NULL_ID),
         });
 
         if (!file) return res.status(400).json({ error: 'Parent not found' });
@@ -67,13 +70,13 @@ export default class FilesController {
         : joinPath(tmpdir(), DEFAULT_ROOT_FOLDER);
 
       const newFile = {
-        userId: new mongoDBCore.BSON.ObjectId(userId),
+        userId: new ObjectId(userId),
         name,
         type,
         isPublic,
         parentId: parentId === ROOT_FOLDER_ID
           ? '0'
-          : new mongoDBCore.BSON.ObjectId(parentId),
+          : new ObjectId(parentId),
       };
 
       await mkDirAsync(baseDir, { recursive: true });
@@ -112,8 +115,8 @@ export default class FilesController {
       const userId = user._id.toString();
 
       const file = await dbClient.filesCollection().findOne({
-        _id: new mongoDBCore.BSON.ObjectId(isValidId(id) ? id : NULL_ID),
-        userId: new mongoDBCore.BSON.ObjectId(isValidId(userId) ? userId : NULL_ID),
+        _id: new ObjectId(isValidId(id) ? id : NULL_ID),
+        userId: new ObjectId(isValidId(userId) ? userId : NULL_ID),
       });
 
       if (!file) return res.status(404).json({ error: 'Not found' });
@@ -147,7 +150,7 @@ export default class FilesController {
         userId: user._id,
         parentId: parentId === ROOT_FOLDER_ID.toString()
           ? parentId
-          : new mongoDBCore.BSON.ObjectId(isValidId(parentId) ? parentId : NULL_ID),
+          : new ObjectId(isValidId(parentId) ? parentId : NULL_ID),
       };
 
       const files = await dbClient.filesCollection().aggregate([
@@ -184,8 +187,8 @@ export default class FilesController {
       const userId = user._id.toString();
 
       const fileFilter = {
-        _id: new mongoDBCore.BSON.ObjectId(isValidId(id) ? id : NULL_ID),
-        userId: new mongoDBCore.BSON.ObjectId(isValidId(userId) ? userId : NULL_ID),
+        _id: new ObjectId(isValidId(id) ? id : NULL_ID),
+        userId: new ObjectId(isValidId(userId) ? userId : NULL_ID),
       };
 
       const file = await dbClient.filesCollection().findOne(fileFilter);
@@ -215,8 +218,8 @@ export default class FilesController {
       const userId = user._id.toString();
 
       const fileFilter = {
-        _id: new mongoDBCore.BSON.ObjectId(isValidId(id) ? id : NULL_ID),
-        userId: new mongoDBCore.BSON.ObjectId(isValidId(userId) ? userId : NULL_ID),
+        _id: new ObjectId(isValidId(id) ? id : NULL_ID),
+        userId: new ObjectId(isValidId(userId) ? userId : NULL_ID),
       };
 
       const file = await dbClient.filesCollection().findOne(fileFilter);
@@ -236,6 +239,46 @@ export default class FilesController {
     } catch (error) {
       console.error('Error unpublishing file:', error);
       res.status(500).json({ error: 'Failed to unpublish file' });
+    }
+  }
+
+  static async getFile(req, res) {
+    try {
+      const { user } = req;
+      const id = req.params?.id || NULL_ID;
+      const size = req.query.size || null;
+
+      const userId = user._id.toString();
+
+      const fileFilter = {
+        _id: new ObjectId(isValidId(id) ? id : NULL_ID),
+        userId: new ObjectId(isValidId(userId) ? userId : NULL_ID),
+      };
+
+      const file = await dbClient.filesCollection().findOne(fileFilter);
+
+      if (!file) return res.status(404).json({ error: 'Not found' });
+      if (file.type === VALID_FILE_TYPES.folder) return res.status(400).json({ error: 'A folder doesn\'t have content' });
+      if (!file.isPublic && file.userId.toString() !== userId) return res.status(404).json({ error: 'Not found' });
+
+      let filePath = file.localPath;
+
+      if (size) filePath = `${filePath}_${size}`;
+
+      if (!existsSync(filePath)) return res.status(404).json({ error: 'Not found' });
+
+      const absoluteFilePath = await realpathAsync(filePath);
+      const fileInfo = await statAsync(absoluteFilePath);
+
+      if (!fileInfo.isFile()) return res.status(404).json({ error: 'Not found' });
+
+      const fileMimeType = contentType(file.name) || 'application/octet-stream';
+
+      res.setHeader('Content-Type', fileMimeType);
+      res.status(200).sendFile(absoluteFilePath);
+    } catch (error) {
+      console.error('Error retrieving file:', error);
+      res.status(500).json({ error: 'Failed to retrieve file' });
     }
   }
 }

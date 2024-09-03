@@ -1,72 +1,76 @@
 import { createClient } from 'redis';
 
+/**
+ * Represents a Redis client.
+ */
 class RedisClient {
+  /**
+   * Creates a new RedisClient instance.
+   */
   constructor() {
-    this.client = createClient();
+    // Create a Redis client with default or custom configuration
+    this.client = createClient({
+      url: 'redis://localhost:6379'  // Adjust if needed
+    });
+
+    // Flag to track client connection status
+    this.isClientConnected = false;
+
+    // Event listeners for connection and errors
     this.client.on('error', (err) => {
       console.error('Redis client error:', err.message || err.toString());
+      this.isClientConnected = false;
     });
 
     this.client.on('connect', () => {
       console.log('Redis client connected');
+      this.isClientConnected = true;
     });
 
     this.client.on('end', () => {
-      console.log('Redis client disconnected');
+      console.log('Redis client connection ended');
+      this.isClientConnected = false;
     });
   }
 
-  async connect() {
-    try {
-      await this.client.connect();
-    } catch (err) {
-      console.error('Error connecting to Redis:', err.message || err.toString());
-      throw err;
-    }
-  }
-
+  /**
+   * Checks if this client's connection to the Redis server is active.
+   * @returns {boolean}
+   */
   isAlive() {
-    return this.client.isOpen || this.client.connected;
+    return this.isClientConnected;
   }
 
+  /**
+   * Retrieves the value of a given key.
+   * @param {String} key The key of the item to retrieve.
+   * @returns {Promise<String | Object>}
+   */
   async get(key) {
-    if (!this.isAlive()) {
-      throw new Error('Redis client is not connected');
-    }
-    try {
-      return await this.client.get(key);
-    } catch (err) {
-      console.error('Error retrieving value from Redis:', err.message || err.toString());
-      throw err;
-    }
+    return this.client.get(key);
   }
 
+  /**
+   * Stores a key and its value along with an expiration time.
+   * @param {String} key The key of the item to store.
+   * @param {String | Number | Boolean} value The item to store.
+   * @param {Number} duration The expiration time of the item in seconds.
+   * @returns {Promise<void>}
+   */
   async set(key, value, duration) {
-    if (!this.isAlive()) {
-      throw new Error('Redis client is not connected');
-    }
-    try {
-      await this.client.setEx(key, duration, value.toString());
-    } catch (err) {
-      console.error('Error setting value in Redis:', err.message || err.toString());
-      throw err;
-    }
+    await this.client.setEx(key, duration, value);
   }
 
+  /**
+   * Removes the value of a given key.
+   * @param {String} key The key of the item to remove.
+   * @returns {Promise<void>}
+   */
   async del(key) {
-    if (!this.isAlive()) {
-      throw new Error('Redis client is not connected');
-    }
-    try {
-      await this.client.del(key);
-    } catch (err) {
-      console.error('Error deleting value from Redis:', err.message || err.toString());
-      throw err;
-    }
+    await this.client.del(key);
   }
 }
 
-const redisClient = new RedisClient();
-await redisClient.connect();  // Ensure the client connects before using it
-
+// Create and export an instance of RedisClient
+export const redisClient = new RedisClient();
 export default redisClient;

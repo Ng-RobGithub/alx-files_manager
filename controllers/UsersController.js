@@ -1,6 +1,6 @@
 /* eslint-disable import/no-named-as-default */
 import bcrypt from 'bcrypt';
-import Queue from 'bull/lib/queue';
+import Queue from 'bull'; // Correct import
 import dbClient from '../utils/db.js';
 
 const userQueue = new Queue('email sending');
