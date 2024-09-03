@@ -1,5 +1,6 @@
-import pkg from 'mongodb';
-const { MongoClient } = pkg;
+import mongodb from 'mongodb';
+// eslint-disable-next-line no-unused-vars
+import Collection from 'mongodb/lib/collection.js';
 import envLoader from './env_loader.js';
 
 /**
@@ -16,13 +17,8 @@ class DBClient {
     const database = process.env.DB_DATABASE || 'files_manager';
     const dbURL = `mongodb://${host}:${port}/${database}`;
 
-    this.client = new MongoClient(dbURL, { useUnifiedTopology: true });
-
-    // Connect to the MongoDB server
-    this.client.connect().catch(error => {
-      console.error('Failed to connect to MongoDB:', error);
-      process.exit(1); // Exit the process with failure code
-    });
+    this.client = new mongodb.MongoClient(dbURL, { useUnifiedTopology: true });
+    this.client.connect();
   }
 
   /**
@@ -30,7 +26,7 @@ class DBClient {
    * @returns {boolean}
    */
   isAlive() {
-    return this.client.isConnected && this.client.isConnected();
+    return this.client.isConnected();
   }
 
   /**
@@ -38,12 +34,7 @@ class DBClient {
    * @returns {Promise<Number>}
    */
   async nbUsers() {
-    try {
-      return await this.client.db().collection('users').countDocuments();
-    } catch (error) {
-      console.error('Error counting users:', error);
-      throw new Error('Failed to count users');
-    }
+    return this.client.db().collection('users').countDocuments();
   }
 
   /**
@@ -51,12 +42,7 @@ class DBClient {
    * @returns {Promise<Number>}
    */
   async nbFiles() {
-    try {
-      return await this.client.db().collection('files').countDocuments();
-    } catch (error) {
-      console.error('Error counting files:', error);
-      throw new Error('Failed to count files');
-    }
+    return this.client.db().collection('files').countDocuments();
   }
 
   /**
@@ -64,12 +50,7 @@ class DBClient {
    * @returns {Promise<Collection>}
    */
   async usersCollection() {
-    try {
-      return this.client.db().collection('users');
-    } catch (error) {
-      console.error('Error retrieving users collection:', error);
-      throw new Error('Failed to retrieve users collection');
-    }
+    return this.client.db().collection('users');
   }
 
   /**
@@ -77,12 +58,7 @@ class DBClient {
    * @returns {Promise<Collection>}
    */
   async filesCollection() {
-    try {
-      return this.client.db().collection('files');
-    } catch (error) {
-      console.error('Error retrieving files collection:', error);
-      throw new Error('Failed to retrieve files collection');
-    }
+    return this.client.db().collection('files');
   }
 }
 
