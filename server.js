@@ -18,7 +18,12 @@ server.get('/health', (req, res) => {
 
 // Start server and handle graceful shutdown
 const start = async () => {
-  await startServer(server);
+  const PORT = process.env.PORT || 5000;
+
+  // Ensure the server binds to 0.0.0.0 to listen on all network interfaces
+  await startServer(server, PORT, '0.0.0.0');
+
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
 
   process.on('SIGTERM', () => {
     console.log('SIGTERM signal received: closing HTTP server');
