@@ -1,12 +1,10 @@
 import pkg from 'mongodb';
 const { MongoClient } = pkg;
 
-// Fetch environment variables with default values
 const DB_HOST = process.env.DB_HOST || 'localhost';
 const DB_PORT = process.env.DB_PORT || 27017;
 const DB_DATABASE = process.env.DB_DATABASE || 'files_manager';
 
-// Define the DBClient class
 class DBClient {
   constructor() {
     this.client = new MongoClient(`mongodb://${DB_HOST}:${DB_PORT}`, {
@@ -31,12 +29,10 @@ class DBClient {
     }
   }
 
-  // Check if connection to MongoDB is alive
   isAlive() {
     return this.isConnected;
   }
 
-  // Get number of documents in the 'users' collection
   async nbUsers() {
     if (!this.isAlive()) {
       throw new Error('Not connected to MongoDB');
@@ -45,7 +41,6 @@ class DBClient {
     return collection.countDocuments();
   }
 
-  // Get number of documents in the 'files' collection
   async nbFiles() {
     if (!this.isAlive()) {
       throw new Error('Not connected to MongoDB');
@@ -55,6 +50,5 @@ class DBClient {
   }
 }
 
-// Create and export an instance of DBClient
 const dbClient = new DBClient();
 export default dbClient;

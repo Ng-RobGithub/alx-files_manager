@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-unused-vars
 import express from 'express';
 import AppController from '../controllers/AppController.js';
 import AuthController from '../controllers/AuthController.js';
@@ -21,8 +20,8 @@ const injectRoutes = (api) => {
   api.get('/disconnect', xTokenAuthenticate, AuthController.getDisconnect);
 
   // User routes
-  api.post('/users', UsersController.postNew);
-  api.get('/users/me', xTokenAuthenticate, UsersController.getMe);
+  api.post('/users', UsersController.createUser);  // Correct method name
+  api.get('/users/me', xTokenAuthenticate, UsersController.getUser); // Ensure this is intended to fetch the current user
 
   // File routes
   api.post('/files', xTokenAuthenticate, FilesController.postUpload);

@@ -1,53 +1,40 @@
-/* eslint-disable import/no-named-as-default */
-import bcrypt from 'bcrypt';
-import Queue from 'bull'; // Correct import
+// controllers/UsersController.js
 import dbClient from '../utils/db.js';
 
-const userQueue = new Queue('email sending');
-const SALT_ROUNDS = 10;
-
-export default class UsersController {
-  /**
-   * Registers a new user.
-   * @param {Request} req The Express request object.
-   * @param {Response} res The Express response object.
-   */
-  static async postNew(req, res) {
-    try {
-      const { email, password } = req.body;
-
-      if (!email) return res.status(400).json({ error: 'Missing email' });
-      if (!password) return res.status(400).json({ error: 'Missing password' });
-
-      const existingUser = await dbClient.usersCollection().findOne({ email });
-
-      if (existingUser) return res.status(400).json({ error: 'User already exists' });
-
-      const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-      const insertionInfo = await dbClient.usersCollection().insertOne({ email, password: hashedPassword });
-      const userId = insertionInfo.insertedId.toString();
-
-      userQueue.add({ userId });
-
-      res.status(201).json({ email, id: userId });
-    } catch (error) {
-      console.error('Error creating user:', error);
-      res.status(500).json({ error: 'Failed to create user' });
-    }
+class UsersController {
+  static async getUsers(req, res) {
+    const users = await dbClient.collection('users').find().toArray();
+    return res.status(200).json(users);
   }
 
-  /**
-   * Gets the current user information.
-   * @param {Request} req The Express request object.
-   * @param {Response} res The Express response object.
-   */
-  static async getMe(req, res) {
-    try {
-      const { user } = req;
-      res.status(200).json({ email: user.email, id: user._id.toString() });
-    } catch (error) {
-      console.error('Error fetching user info:', error);
-      res.status(500).json({ error: 'Failed to fetch user information' });
+  static async getUser(req, res) {
+    const userId = req.params.id;
+    const user = await dbClient.collection('users').findOne({ _id: userId });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
+    return res.status(200).json(user);
+  }
+
+  static async createUser(req, res) {
+    const { name, email, password } = req.body;
+    const newUser = { name, email, password };
+    await dbClient.collection('users').insertOne(newUser);
+    return res.status(201).json(newUser);
+  }
+
+  static async updateUser(req, res) {
+    const userId = req.params.id;
+    const updates = req.body;
+    await dbClient.collection('users').updateOne({ _id: userId }, { $set: updates });
+    return res.status(200).json({ message: 'User updated successfully' });
+  }
+
+  static async deleteUser(req, res) {
+    const userId = req.params.id;
+    await dbClient.collection('users').deleteOne({ _id: userId });
+    return res.status(204).send();
   }
 }
+
+export default UsersController;
